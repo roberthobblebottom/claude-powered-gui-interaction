@@ -1,7 +1,22 @@
 import os
-
+import asyncio
 from loop import sampling_loop
+from tools import (
+    ToolResult,
+    ComputerTool20250124
+    ,BaseComputerTool
+)
+async def m(messages):
+    os.environ["WIDTH"] = '3840'
+    os.environ["HEIGHT"] = '2160'
+    await sampling_loop(model="claude-3-7-sonnet-20250219", messages=messages,
+                  max_tokens=2024,
+                  thinking_budget=1024,
+                  api_key=os.environ["ANTHROPIC_API_KEY"],
+                  system_prompt_suffix="",computer_tool=ComputerTool20250124()
 
+
+                  )
 if __name__ == '__main__':
     with open("anthropic_api_key.txt", "r") as f:
         os.environ["ANTHROPIC_API_KEY"] = f.readline().replace("\n", "")
@@ -10,15 +25,7 @@ if __name__ == '__main__':
     # os.system("python3 app.py")
     messages = [{"role": "user",
                  "content": "Click the Yes Button and then click Back. And then click on the No button and then click back"}]
-
-    sampling_loop(model="claude-3-7-sonnet-20250219", messages=messages,
-                  max_tokens=2024,
-                  tool_version="20250124",
-                  thinking_budget=1024,
-                  api_key=os.environ["ANTHROPIC_API_KEY"],
-                  system_prompt_suffix="",
-
-                  )
+    asyncio.run(m(messages))
     #
     # response = client.beta.messages.with_raw_response.create(
     #     model="claude-3-7-sonnet-20250219",
