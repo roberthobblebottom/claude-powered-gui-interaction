@@ -4,21 +4,18 @@ Agentic sampling loop that calls the Anthropic API and local implementation of a
 
 import platform
 from datetime import datetime
-from typing import cast
 
 import anthropic
 from anthropic.types.beta import (
     BetaImageBlockParam,
     BetaMessageParam,
     BetaTextBlockParam,
-    BetaToolResultBlockParam, BetaTextBlock
-
+    BetaToolResultBlockParam
 )
 
 from tools import (
     ToolResult,
-    ComputerTool20250124
-, BaseComputerTool
+    BaseComputerTool
 )
 
 # This system prompt is optimized for the Docker environment in this repository and
@@ -40,15 +37,15 @@ SYSTEM_PROMPT = f"""
 
 # async
 async def sampling_loop(
-        *,
-        model: str,
-        system_prompt_suffix: str,
-        messages: list[BetaMessageParam],
-        api_key: str,
-        max_tokens: int = 4096,
-        thinking_budget: int | None = None,
-        token_efficient_tools_beta: bool = False,
-        computer_tool: BaseComputerTool
+    *,
+    model: str,
+    system_prompt_suffix: str,
+    messages: list[BetaMessageParam],
+    api_key: str,
+    max_tokens: int = 4096,
+    thinking_budget: int | None = None,
+    token_efficient_tools_beta: bool = False,
+    computer_tool:BaseComputerTool
 ):
     """
     Agentic sampling loop for the assistant/tool interaction of computer use.
@@ -57,9 +54,9 @@ async def sampling_loop(
         type="text",
         text=f"{SYSTEM_PROMPT}{' ' + system_prompt_suffix if system_prompt_suffix else ''}",
     )
-
+    iteration = 0
     while True:
-
+        iteration +=1
         client = anthropic.Anthropic(api_key=api_key, max_retries=4)
 
         extra_body = {}
@@ -84,29 +81,28 @@ async def sampling_loop(
             model=model,
             system=[system],
             tools=tools,
-            betas=["computer-use-2025-01-24"],
+            betas= ["computer-use-2025-01-24"],
             extra_body=extra_body,
         )
 
         response_content = raw_response.content
-        print(response_content, "\n\n\n")
+        print('------iteration',iteration,"-----")
+        print(response_content,"\n\n\n")
         messages.append(
             {
                 "role": "assistant",
                 "content": response_content,
             }
         )
-        # print('response_params',response_params)
-        tool_result_content = []
-        # # for content_block in response_params:
-        # #     if content_block["type"] == "tool_use":
+        tool_result_content  = []
         for block in response_content:
             if block.type == "tool_use":
                 if "coordinate" in block.input.keys():
                     coordinate = block.input['coordinate']
                 else:
                     coordinate = None
-                result = await computer_tool(action=block.input["action"], coordinate=coordinate)
+                result = await computer_tool(action = block.input["action"],coordinate=coordinate)
+
 
                 tool_result_content.append(
                     _make_api_tool_result(result, block.id)
@@ -118,8 +114,10 @@ async def sampling_loop(
         messages.append({"content": tool_result_content, "role": "user"})
 
 
+
+
 def _make_api_tool_result(
-        result: ToolResult, tool_use_id: str
+    result: ToolResult, tool_use_id: str
 ) -> BetaToolResultBlockParam:
     """Convert an agent ToolResult to an API ToolResultBlockParam."""
     tool_result_content: list[BetaTextBlockParam | BetaImageBlockParam] | str = []
