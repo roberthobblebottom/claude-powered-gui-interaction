@@ -1,5 +1,9 @@
 # claude-powered-gui-interaction
 
+
+  
+Claude ai agent computer use take home assessment for GeoBit.AI position   
+
 assuming unix environment:
 
 run on a terminal window:
